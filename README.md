@@ -47,12 +47,12 @@ parameters:
   this value using the network tab in your webbrowser.
 `devid`: this is probably the device id within the installtaion site. This value
   can also be found using the developer tools of your web browser.
-`entities`: is a dict like configuration of, where the key is the entity_id to 
+`sensors`: is a dict like configuration of, where the key is the entity_id to 
   use. The value of each item is also a dict like with the keys `parameter` and 
   `unit_of_measurement`. The value of `parameter` is the name of a sensor value
   that the website returns. Expect it to be something like `par24`. The 
   `unit_of_measurement` is that value of the `unit_of_measurement` attribute of
   the sensor. This is probably something like `°C`, `°F`.
 
-You can have multiple entities and there `unit_of_measurement` is not limited to
+Note: You can have multiple sensors and their `unit_of_measurement` is not limited to
 the 2 values I described. Use anything you need here.
