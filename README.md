@@ -52,7 +52,9 @@ parameters:
   `unit_of_measurement`. The value of `parameter` is the name of a sensor value
   that the website returns. Expect it to be something like `par24`. The 
   `unit_of_measurement` is that value of the `unit_of_measurement` attribute of
-  the sensor. This is probably something like `°C`, `°F`.
+  the sensor. This is probably something like `°C`, `°F`. The field 
+  `value_mapping` is used to convert `0` and `1` to `on` and `off`, where `0`
+  and `1` are the keys and `on` and `off` their respective values.
 
 Note: You can have multiple sensors and their `unit_of_measurement` is not limited to
 the 2 values I described. Use anything you need here.

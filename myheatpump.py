@@ -16,6 +16,7 @@ class MyHeatPump(hass.Hass):
 
         self._session = None
 
+        self._previous_values = {}
         self._update_states()
         self.run_every(
             self._update_states,
@@ -29,7 +30,13 @@ class MyHeatPump(hass.Hass):
         if not self._session:
             self._start_session()
         fetched_data = self._fetch_data()
-        self._send_data_so_sensors(fetched_data)
+        changed_values = {
+            k: v
+            for k, v in fetched_data.items()
+            if v != self._previous_values.get(k)
+        }
+        self._send_values_to_sensors(changed_values)
+        self._previous_values = fetched_data
 
     def _start_session(self):
         if self._session:
@@ -64,9 +71,26 @@ class MyHeatPump(hass.Hass):
         response = self._session.post("https://www.myheatpump.com/a/amt/realdata/get", {"mn":self._mn, "devid":self._devid})
         return response.json()
 
-    def _send_data_so_sensors(self, data):
-        self.log(f"_send_data_so_sensors: {data}")
-        for device_id, device_configuration in self.args['entities'].items():
+    def _send_values_to_sensors(self, data):
+        self.log(f"_send_values_to_sensors: {data}")
+        for device_id, device_configuration in self.args['sensors'].items():
+            attributes = {}
+
+            if 'unit_of_measurement' in device_configuration:
+                attributes["unit_of_measurement"] = device_configuration['unit_of_measurement']
+
+            if 'state_class' in device_configuration:
+                attributes["state_class"] = device_configuration['state_class']
+
+            if 'device_class' in device_configuration:
+                attributes["device_class"] = device_configuration['device_class']
+
+            if 'friendly_name' in device_configuration:
+                attributes["friendly_name"] = device_configuration['friendly_name']
+
             value = data[device_configuration['parameter']]
-            unit_of_measurement = device_configuration['unit_of_measurement']
-            self.set_state(device_id, state=value, attributes={"unit_of_measurement": unit_of_measurement})
+            if 'value_mapping' in device_configuration:
+                mapping = device_configuration['value_mapping']
+                value = mapping.get(value)
+
+            self.set_state(device_id, state=value, attributes=attributes)
