@@ -24,15 +24,18 @@ class TimePredictor(hass.Hass):
             derivative = self.get_state(derivative_sensor)
             target_value = self.get_state(target_value_sensor)
             current_value = self.get_state(current_value_sensor)
-            value_delta = float(target_value) - float(current_value)
-            output_value = value_delta / float(derivative)
+            try:
+                value_delta = float(target_value) - float(current_value)
+                output_value = max(int(value_delta / float(derivative)), 0)
 
-            self.set_state(
-                output_sensor,
-                state=output_value,
-                attributes={
-                    'device_class': 'duration',
-                    'unit_of_measurement': 's',
-                },
-            )
+                self.set_state(
+                    output_sensor,
+                    state=output_value,
+                    attributes={
+                        'device_class': 'duration',
+                        'unit_of_measurement': 'm',
+                    },
+                )
+            except TypeError as exception:
+                pass
         self.log("calculations done")
