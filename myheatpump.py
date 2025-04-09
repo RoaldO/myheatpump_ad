@@ -4,6 +4,18 @@ import requests
 import base64
 
 
+_SENSOR_FIELDS_TO_COPY = (
+    'device_class',
+    'friendly_name',
+    'state_class',
+    'unit_of_measurement',
+    'state_color',
+)
+_SENSOR_FIELDS_TO_MAP = {
+    'icon_mapping': 'icon',
+    'color_mapping': 'icon_color',
+}
+
 class MyHeatPump(hass.Hass):
     def initialize(self):
         self.log("initializing")
@@ -74,23 +86,26 @@ class MyHeatPump(hass.Hass):
     def _send_values_to_sensors(self, data):
         self.log(f"_send_values_to_sensors: {data}")
         for device_id, device_configuration in self.args['sensors'].items():
-            attributes = {}
+            parameters_name = device_configuration['parameter']
+            if parameters_name in data:
+                value = data[parameters_name]
 
-            if 'unit_of_measurement' in device_configuration:
-                attributes["unit_of_measurement"] = device_configuration['unit_of_measurement']
+                attributes = {
+                    field_name: device_configuration[field_name]
+                    for field_name in _SENSOR_FIELDS_TO_COPY
+                    if field_name in device_configuration
+                }
+                mapped_attrs = {
+                    field_name: device_configuration[config_name].get(value)
+                    for config_name, field_name in _SENSOR_FIELDS_TO_MAP.items()
+                    if config_name in device_configuration
+                }
+                attributes={**attributes, **mapped_attrs}
 
-            if 'state_class' in device_configuration:
-                attributes["state_class"] = device_configuration['state_class']
+                self.log(f"{attributes=}")
 
-            if 'device_class' in device_configuration:
-                attributes["device_class"] = device_configuration['device_class']
+                if 'value_mapping' in device_configuration:
+                    mapping = device_configuration['value_mapping']
+                    value = mapping.get(value)
 
-            if 'friendly_name' in device_configuration:
-                attributes["friendly_name"] = device_configuration['friendly_name']
-
-            value = data[device_configuration['parameter']]
-            if 'value_mapping' in device_configuration:
-                mapping = device_configuration['value_mapping']
-                value = mapping.get(value)
-
-            self.set_state(device_id, state=value, attributes=attributes)
+                self.set_state(device_id, state=value, attributes=attributes)
