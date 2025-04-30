@@ -36,7 +36,25 @@ class MyHeatPump(hass.Hass):
             timedelta(minutes=1).total_seconds(),
         )
 
+        self._heatpump_power_entity = "input_boolean.heatpump_power"
+        self.listen_state(self.state_changed_event, self._heatpump_power_entity)
         self.log("started")
+
+    def state_changed_event(self, entity, attribute, old, new, kwargs):
+        self.log(f"{attribute!r} van {entity!r} gewijzigd van {old!r} naar {new!r}")
+        value_mapping = {
+            "off": 0,
+            "on": 1,
+        }
+        value = value_mapping[new]
+        self._post_a_value(value)
+
+    def _post_a_value(self, value):
+        post_body = {
+            "value": value,
+        }
+        url = 'https://url.blah'
+        self.log(f'about to post {post_body=} to {url=} and make sure i got a session')
 
     def _update_states(self, *kwargs):
         if not self._session:
