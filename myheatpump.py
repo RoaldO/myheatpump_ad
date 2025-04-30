@@ -36,9 +36,12 @@ class MyHeatPump(hass.Hass):
             timedelta(minutes=1).total_seconds(),
         )
 
-        self._heatpump_power_entity = "input_boolean.heatpump_power"
-        self.listen_state(self.state_changed_event, self._heatpump_power_entity)
+        self._register_triggers()
         self.log("started")
+
+    def _register_triggers(self):
+        for entity_name in self.args['triggers']:
+            self.listen_state(self.state_changed_event, entity_name)
 
     def state_changed_event(self, entity, attribute, old, new, kwargs):
         if old is None:
@@ -82,7 +85,6 @@ class MyHeatPump(hass.Hass):
     def _send_all_values_for(self, key):
         for value in self.args['sensors'].values():
             if 'send_all_updates' in value and value['parameter'] == key:
-                self.log(f"send all values for {key!r}!")
                 return True
 
     def _start_session(self):

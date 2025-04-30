@@ -26,7 +26,15 @@ class TimePredictor(hass.Hass):
             current_value = self.get_state(current_value_sensor)
             try:
                 value_delta = float(target_value) - float(current_value)
-                output_value = max(int(value_delta / float(derivative)), 0)
+                if float(derivative) != 0:
+                    output_value = max(int(value_delta / float(derivative)), 0)
+                # else: set to `unknown`
+
+                self.log(f"{target_value=}")
+                self.log(f"{current_value=}")
+                self.log(f"-> {value_delta=}")
+                self.log(f"   {derivative=}")
+                self.log(f"   -> {output_value=}")
 
                 self.set_state(
                     output_sensor,
