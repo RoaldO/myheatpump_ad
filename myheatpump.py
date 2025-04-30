@@ -41,20 +41,30 @@ class MyHeatPump(hass.Hass):
         self.log("started")
 
     def state_changed_event(self, entity, attribute, old, new, kwargs):
-        self.log(f"{attribute!r} van {entity!r} gewijzigd van {old!r} naar {new!r}")
+        # self.log(f"{attribute!r} van {entity!r} gewijzigd van {old!r} naar {new!r}")
         value_mapping = {
-            "off": 0,
-            "on": 1,
+            "off": "0",
+            "on": "1",
         }
         value = value_mapping[new]
-        self._post_a_value(value)
+        self._post_a_value("par1", value)
 
-    def _post_a_value(self, value):
-        post_body = {
-            "value": value,
-        }
-        url = 'https://url.blah'
-        self.log(f'about to post {post_body=} to {url=} and make sure i got a session')
+    def _post_a_value(self, parameter, value):
+        if not self._session:
+            self._start_session()
+        response = self._session.post(
+            "https://www.myheatpump.com/a/amt/setdata/update",
+            data={
+                "id": "",
+                "mn": str(self._mn),
+                "devid_": str(self._devid),
+                parameter: value,
+                "fieldName": parameter,
+                "fieldValue": value,
+            }
+        )
+        response.raise_for_status()
+        self.log(f'{response.text=}')
 
     def _update_states(self, *kwargs):
         if not self._session:
