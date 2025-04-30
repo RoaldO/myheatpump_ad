@@ -44,16 +44,19 @@ class MyHeatPump(hass.Hass):
             self.listen_state(self.state_changed_event, entity_name)
 
     def state_changed_event(self, entity, attribute, old, new, kwargs):
+        entity_config = self.args['triggers'][entity]
+        parameter = entity_config['parameter']
         if old is None:
             return  # i think we're still initializing
-        value_mapping = {
-            "off": 0,
-            "on": 1,
-        }
-        value = value_mapping[new]
-        self._post_a_value("par1", value)
+        if 'value_mapping' in entity_config:
+            value_mapping = entity_config['value_mapping']
+            value = value_mapping[new]
+        else:
+            value = new
+        self._post_a_value(parameter, value)
 
     def _post_a_value(self, parameter, value):
+        self.log(f'{parameter}={value!r}')
         if not self._session:
             self._start_session()
         response = self._session.post(
