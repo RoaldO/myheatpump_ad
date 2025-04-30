@@ -15,7 +15,7 @@ class TimePredictor(hass.Hass):
 
     def _recalc(self, *kwargs):
         for calculation in self.args['calculations']:
-            self.log(f"per form calculation for {calculation=}")
+            self.log(f"perform calculation for {calculation=}")
             derivative_sensor = calculation['derivative_sensor']
             target_value_sensor = calculation['target_value_sensor']
             current_value_sensor = calculation['current_value_sensor']

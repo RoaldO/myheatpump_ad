@@ -41,10 +41,11 @@ class MyHeatPump(hass.Hass):
         self.log("started")
 
     def state_changed_event(self, entity, attribute, old, new, kwargs):
-        # self.log(f"{attribute!r} van {entity!r} gewijzigd van {old!r} naar {new!r}")
+        if old is None:
+            return  # i think we're still initializing
         value_mapping = {
-            "off": "0",
-            "on": "1",
+            "off": 0,
+            "on": 1,
         }
         value = value_mapping[new]
         self._post_a_value("par1", value)
@@ -56,12 +57,12 @@ class MyHeatPump(hass.Hass):
             "https://www.myheatpump.com/a/amt/setdata/update",
             data={
                 "id": "",
-                "mn": str(self._mn),
-                "devid_": str(self._devid),
+                "mn": self._mn,
+                "devid": self._devid,
                 parameter: value,
                 "fieldName": parameter,
                 "fieldValue": value,
-            }
+            },
         )
         response.raise_for_status()
         self.log(f'{response.text=}')
@@ -73,10 +74,16 @@ class MyHeatPump(hass.Hass):
         changed_values = {
             k: v
             for k, v in fetched_data.items()
-            if v != self._previous_values.get(k)
+            if v != self._previous_values.get(k) or self._send_all_values_for(k)
         }
         self._send_values_to_sensors(changed_values)
         self._previous_values = fetched_data
+
+    def _send_all_values_for(self, key):
+        for value in self.args['sensors'].values():
+            if 'send_all_updates' in value and value['parameter'] == key:
+                self.log(f"send all values for {key!r}!")
+                return True
 
     def _start_session(self):
         if self._session:
@@ -129,9 +136,6 @@ class MyHeatPump(hass.Hass):
                     if config_name in device_configuration
                 }
                 attributes={**attributes, **mapped_attrs}
-
-                self.log(f"{attributes=}")
-
                 if 'value_mapping' in device_configuration:
                     mapping = device_configuration['value_mapping']
                     value = mapping.get(value)
